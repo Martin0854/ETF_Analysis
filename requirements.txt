@@ -1,0 +1,6 @@
+PyQt6
+pykrx
+yfinance
+pandas
+matplotlib
+requests
