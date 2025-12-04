@@ -131,22 +131,51 @@ class ETFDataFetcher:
             print(f"Error fetching listing date: {e}")
             return None
 
+    def is_target_etf(self, name):
+        """
+        Checks if the ETF is a target for analysis (Domestic Equity).
+        Excludes Foreign tracking and Bond ETFs.
+        """
+        # 1. Filter Foreign
+        foreign_keywords = [
+            "미국", "S&P", "나스닥", "NASDAQ", "China", "중국", "HongKong", "홍콩", 
+            "Japan", "일본", "Vietnam", "베트남", "India", "인도", "Euro", "유로", 
+            "Global", "글로벌", "MSCI", "Latin", "라틴", "Brazil", "브라질", 
+            "Russia", "러시아", "Shenzhen", "심천", "CSI", "HangSeng", "항셍",
+            "Bloomberg", "블룸버그", "Solactive", "STOXX", "Morningstar", "모닝스타",
+            "NYSE", "FANG", "팡플러스"
+        ]
+        
+        for kw in foreign_keywords:
+            if kw in name:
+                return False
+
+        # 2. Filter Bonds
+        bond_keywords = [
+            "채권", "국채", "국고채", "단기채", "회사채", "Bond", "Treasury", "KOFR", "CD금리"
+        ]
+        for kw in bond_keywords:
+            if kw in name:
+                return False
+                
+        return True
+
     def get_all_etf_list(self):
         """
-        Returns a list of all ETFs in format "Ticker | Name".
+        Returns a list of all target ETFs in format "Ticker | Name".
+        Filters out Foreign and Bond ETFs.
         """
         try:
             # Get all tickers (defaults to today)
             tickers = stock.get_etf_ticker_list()
             
-            # This might be slow if we fetch name for each one individually
-            # pykrx doesn't have a bulk name fetcher for ETFs easily exposed?
-            # stock.get_etf_ticker_name(ticker) is fast enough usually?
-            # Let's try to optimize or just loop. There are ~800 ETFs.
-            
             etf_list = []
             for ticker in tickers:
                 name = stock.get_etf_ticker_name(ticker)
+                
+                if not self.is_target_etf(name):
+                    continue
+                        
                 etf_list.append(f"{ticker} | {name}")
             return etf_list
         except Exception as e:

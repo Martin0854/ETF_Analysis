@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QLineEdit, QListWidget, 
-                             QPushButton, QHBoxLayout, QLabel, QMessageBox)
+                             QPushButton, QHBoxLayout, QLabel, QMessageBox, QCheckBox)
 from PyQt6.QtCore import Qt
 
 class SearchDialog(QDialog):
@@ -40,11 +40,12 @@ class SearchDialog(QDialog):
         try:
             from data.etf_data import ETFDataFetcher
             fetcher = ETFDataFetcher()
+            # Always filtered now
             self.all_items = fetcher.get_all_etf_list()
             self.update_list(self.all_items)
         except Exception as e:
             QMessageBox.warning(self, "Error", f"Failed to load ETF list: {e}")
-            
+
     def update_list(self, items):
         self.list_widget.clear()
         self.list_widget.addItems(items)

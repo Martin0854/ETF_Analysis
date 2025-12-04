@@ -1,10 +1,11 @@
 from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QStackedWidget, 
-                             QLabel, QHBoxLayout, QMessageBox)
+                             QLabel, QHBoxLayout, QMessageBox, QPushButton)
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from ui.dashboard import DashboardWidget
 from ui.input_form import InputFormWidget
 from ui.controls import ControlButtonWidget
 from ui.result_view import ResultViewWidget
+from ui.foreign_analysis_window import ForeignAnalysisWindow
 
 # Worker for Market Data
 class MarketDataWorker(QThread):
@@ -150,6 +151,8 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("ETF 분석기")
         self.resize(1000, 700)
         
+        self.foreign_window = None
+        
         # Central Widget
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -193,6 +196,29 @@ class MainWindow(QMainWindow):
         
         layout.addStretch()
         
+        # Notice Section
+        notice_layout = QVBoxLayout()
+        notice_layout.setSpacing(5)
+        
+        notice_title = QLabel("⚠️ 주의사항")
+        notice_title.setStyleSheet("font-weight: bold; color: #d32f2f; font-size: 14px;")
+        notice_layout.addWidget(notice_title, alignment=Qt.AlignmentFlag.AlignCenter)
+        
+        notices = [
+            "1. 해외 지수 추종 국내 ETF는 분석 불가입니다!",
+            "2. 코스피, 코스닥, 코넥스 등 국내 주식시장에 상장된 종목을 담은 ETF에 한해서 분석 가능합니다.",
+            "3. 외국 지수(S&P500 등) 추종 ETF를 확인하려면 우 하단의 외국 지수 분석을 확인하세요."
+        ]
+        
+        for notice in notices:
+            lbl = QLabel(notice)
+            lbl.setStyleSheet("color: #555; font-size: 12px;")
+            notice_layout.addWidget(lbl, alignment=Qt.AlignmentFlag.AlignCenter)
+            
+        layout.addLayout(notice_layout)
+        
+        layout.addStretch()
+        
         # Middle Section: Input Form
         self.input_form = InputFormWidget()
         layout.addWidget(self.input_form, alignment=Qt.AlignmentFlag.AlignCenter)
@@ -200,7 +226,7 @@ class MainWindow(QMainWindow):
         layout.addStretch()
         
         # Bottom Section: Controls
-        self.controls = ControlButtonWidget(self.run_analysis, self.close)
+        self.controls = ControlButtonWidget(self.run_analysis, self.close, self.open_foreign_analysis)
         layout.addWidget(self.controls, alignment=Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignRight)
 
     def load_market_data(self):
@@ -246,3 +272,9 @@ class MainWindow(QMainWindow):
         
     def go_back(self):
         self.stacked_widget.setCurrentIndex(0)
+
+    def open_foreign_analysis(self):
+        if self.foreign_window is None:
+            self.foreign_window = ForeignAnalysisWindow()
+        self.foreign_window.show()
+        self.foreign_window.raise_()

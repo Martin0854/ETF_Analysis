@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import QWidget, QHBoxLayout, QPushButton
 
 class ControlButtonWidget(QWidget):
-    def __init__(self, run_callback, exit_callback):
+    def __init__(self, run_callback, exit_callback, foreign_callback=None):
         super().__init__()
         
         layout = QHBoxLayout(self)
@@ -27,6 +27,24 @@ class ControlButtonWidget(QWidget):
         """)
         self.run_btn.clicked.connect(run_callback)
         layout.addWidget(self.run_btn)
+        
+        if foreign_callback:
+            self.foreign_btn = QPushButton("외국 지수 분석")
+            self.foreign_btn.setMinimumHeight(40)
+            self.foreign_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #2196F3; 
+                    color: white; 
+                    font-weight: bold; 
+                    border-radius: 5px; 
+                    padding: 5px 15px;
+                }
+                QPushButton:hover {
+                    background-color: #1976D2;
+                }
+            """)
+            self.foreign_btn.clicked.connect(foreign_callback)
+            layout.addWidget(self.foreign_btn)
         
         self.exit_btn = QPushButton("종료")
         self.exit_btn.setMinimumHeight(40)
