@@ -1,6 +1,8 @@
 from pykrx import stock
 import pandas as pd
 import time
+import yfinance as yf
+import datetime
 
 class ETFDataFetcher:
     def __init__(self):
@@ -74,10 +76,53 @@ class ETFDataFetcher:
     def get_listing_date(self, ticker):
         """
         Returns the listing date (first trading date) of the ETF.
+        Optimized to use yfinance metadata for speed.
         """
         try:
-            # Fetch from a sufficiently early date. First ETFs in Korea were listed in 2002.
-            # We fetch just the index (dates) to be faster if possible, but pykrx returns full DF.
+            # Helper to fetch date from yfinance
+            def fetch_yf_date(symbol):
+                yf_ticker = yf.Ticker(symbol)
+                
+                # 1. Try info (most accurate "First Trade Date")
+                try:
+                    info = yf_ticker.info
+                    if 'firstTradeDateMilliseconds' in info:
+                        ts_ms = info['firstTradeDateMilliseconds']
+                        dt = datetime.datetime.fromtimestamp(ts_ms / 1000)
+                        return dt.strftime("%Y-%m-%d")
+                except Exception as e:
+                    # print(f"Info fetch failed for {symbol}: {e}")
+                    pass
+                
+                # 2. Try history metadata (backup, often faster or available when info is partial)
+                try:
+                    meta = yf_ticker.get_history_metadata()
+                    if 'firstTradeDate' in meta:
+                        ts = meta['firstTradeDate']
+                        # This is usually seconds timestamp
+                        dt = datetime.datetime.fromtimestamp(ts)
+                        return dt.strftime("%Y-%m-%d")
+                except Exception as e:
+                    # print(f"Metadata fetch failed for {symbol}: {e}")
+                    pass
+                    
+                return None
+
+            # 1. Handle existing suffix
+            if "." in ticker:
+                date = fetch_yf_date(ticker)
+                if date: return date
+            
+            # 2. Try .KS (KOSPI/KOSDAQ ETFs usually use .KS in Yahoo)
+            date = fetch_yf_date(f"{ticker}.KS")
+            if date: return date
+
+            # 3. Try .KQ (Just in case some KOSDAQ ETFs use this)
+            date = fetch_yf_date(f"{ticker}.KQ")
+            if date: return date
+            
+            # Fallback to old method if yfinance fails
+            print(f"yfinance failed for {ticker}, falling back to pykrx...")
             df = stock.get_etf_ohlcv_by_date("20020101", "20251231", ticker)
             if not df.empty:
                 return df.index[0].strftime("%Y-%m-%d")
